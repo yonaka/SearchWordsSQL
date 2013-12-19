@@ -9,14 +9,14 @@ If the database server supports an SQL LIKE operator for text search, your code 
 require_once 'SearchWordsSQL.php';
 $searchwords = "php library OR code";
 
-$sqlbuilder = new SearchWordsSQL\SQLBuilder("BodyText LIKE ?", SearchWordsSQL\SQLLikeCallback);
-	// The first argument is a parameterized SQL boolean expression for each word
+$sqlbuilder = new SearchWordsSQL\SQLBuilder("BodyText LIKE ?", "\SearchWordsSQL\SQLLikeValueCallback");
+    // The first argument is a parameterized SQL boolean expression for each word
     // The second specifies the values should be converted for a LIKE operator.
 $result = $sqlbuilder->Build($searchwords);
 echo $result['SQL'] . "\n";
-	// produces '(BodyText LIKE ?) and ((BodyText LIKE ?) OR (BodyText LIKE ?))'
+    // produces '((BodyText LIKE ?) AND ( (BodyText LIKE ?) OR (BodyText LIKE ?) ) )'
 echo join(", ", $result['value']) . "\n";
-	// produces '%php%, %library%, %code%'
+    // produces '%php%, %library%, %code%'
     
 $db = new PDO("pgsql:host=localhost");
 $stmt = $db->prepare("SELECT * FROM BookText WHERE ${result['SQL']}");
@@ -37,7 +37,7 @@ echo $result['IBL'] . "\n";
     
 $db = new PDO("mysql:host=localhost");
 $stmt = $db->prepare("SELECT * FROM BookText WHERE MATCH (BodyText) AGAINST (? IN BOOLEAN MODE)");
-$stmt->execute($result['IBL']);
+$stmt->execute(array($result['IBL']));
 ```
 
 ## Syntax supported for search words
