@@ -3,9 +3,9 @@
 /**
  * SearchWordsSQL
  *
- * A library to convert Google-style seach words
+ * A library to convert a Google-style query of seach words
  * into an SQL boolean expression and a MySQL IBL
- * (a.k.a. 'implied Boolean logic' or 'IN BOOLEAN MODE') one.
+ * (a.k.a. 'Implied Boolean Logic' or 'IN BOOLEAN MODE') one.
  * @copyright 2013 yonaka
 
     This program is free software: you can redistribute it and/or modify

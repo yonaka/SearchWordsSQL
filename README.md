@@ -1,5 +1,5 @@
 # SearchWordsSQL
-Converts Google-style seach words into an SQL boolean expression and a MySQL IBL (a.k.a. 'implied Boolean logic' or 'IN BOOLEAN MODE') one.
+Converts a Google-style query expression of seach words into an SQL boolean expression and a MySQL IBL (a.k.a. 'Implied Boolean Logic' or 'IN BOOLEAN MODE') one for full-text search.
 
 ## Quickstart
 To begin with, put SearchWordsSQL.php on the PHP library path.
