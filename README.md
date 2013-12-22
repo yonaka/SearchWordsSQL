@@ -49,7 +49,7 @@ $stmt->execute(array($result['IBL']));
 * A pair of double quotation marks `""` specifies words inside containing spaces to be treated as a word. You can escape with a backslash.
 
 ## API Documentation
-Run makedoc.sh and see ./doc/index.html.
+Run makedoc.sh and see ./doc/index.html. Also there are [online documents](http://yonaka.github.io/SearchWordsSQL/doc/).
 
 ## License
 LGPLv3. See COPYING.LESSER.
