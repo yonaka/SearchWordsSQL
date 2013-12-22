@@ -120,6 +120,7 @@ namespace SearchWordsSQL {
 			$this->opFuncs = array(
 				'word'	=>	function($node) use ($o) {
 					$lhs = $node[0]['word'];
+					if (preg_match('/^\\*+$/uA', $lhs)) throw new \InvalidArgumentException("Independent stars");
 					$lhsval = call_user_func($o->valueCallback, $lhs);
 					$lhsibl = call_user_func($o->IBLCallback, $lhs);
 					$wordtype = $node[0]['wordtype'];

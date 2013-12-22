@@ -47,6 +47,7 @@ $stmt->execute(array($result['IBL']));
 * `a b OR c d` means `a (b OR c) d`.
 * A word following minus sign `-` means it must not be included.
 * A pair of double quotation marks `""` specifies words inside containing spaces to be treated as a word. You can escape with a backslash.
+* `*` inside a word means 'any characters.' Bare star(s) are not allowed.
 
 ## API Documentation
 Run makedoc.sh and see ./doc/index.html. Also there are [online documents](http://yonaka.github.io/SearchWordsSQL/doc/).

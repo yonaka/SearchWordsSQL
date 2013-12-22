@@ -316,6 +316,18 @@ class SQLBuilderTest extends PHPUnit_Framework_TestCase {
 	}
 
 
+	/**
+	  *	@test
+	  * @expectedException \InvalidArgumentException
+	  */
+	public function testBuild_stars() {
+		$o = new SearchWordsSQL\SQLBuilder(
+			"c = ?"
+		);
+		$o->Build("*****");
+	}
+
+
 
 	/**
 	  *	@test
