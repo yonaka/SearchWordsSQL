@@ -2,7 +2,11 @@
 require_once 'SearchWordsSQL.php';
 
 function normalizeSQL(&$a) {
-	$a['SQL'] = strtolower(preg_replace('/ +/', '', $a['SQL']));
+	$a['SQL'] = strtolower(preg_replace('/ +/', ' ', $a['SQL']));
+	$a['SQL'] = preg_replace('/ *\\) */', ')', $a['SQL']);
+	$a['SQL'] = preg_replace('/ *\\( */', '(', $a['SQL']);
+	$a['SQL'] = preg_replace('/ *= */', '=', $a['SQL']);
+
 	return $a;
 }
 
@@ -325,6 +329,75 @@ class SQLBuilderTest extends PHPUnit_Framework_TestCase {
 			"c = ?"
 		);
 		$o->Build("*****");
+	}
+
+	/**
+	  *	@test
+	  * @expectedException \InvalidArgumentException
+	  */
+	public function testBuild_empty() {
+		$o = new SearchWordsSQL\SQLBuilder(
+			"c = ?"
+		);
+		$o->Build("");
+	}
+
+	/**
+	  *	@test
+	  * @expectedException \InvalidArgumentException
+	  */
+	public function testBuild_null() {
+		$o = new SearchWordsSQL\SQLBuilder(
+			"c = ?"
+		);
+		$o->Build(null);
+	}
+
+
+	/**
+	  *	@test
+	  * @dataProvider providerBuild_prefix
+	  */
+	public function testBuild_prefix($wordsline, $out) {
+		$o = new SearchWordsSQL\SQLBuilder(
+			"c = ?",
+			null,
+			null,
+			array('site:' =>
+				function ($lhs) {
+					return array(
+						'SQL' 	=> 'site = ?',
+						'value'	=> mb_substr($lhs, 5)
+					);
+				}
+			)
+		);
+		$this->assertEquals(
+			normalizeSQL($out),
+			normalizeSQL( $o->Build($wordsline))
+		);
+	}
+	public function providerBuild_prefix() {
+		return array(
+			array( 'test site:www.example.com', 	
+				array(
+					'SQL' => '((c = ?) and site = ?)',
+					'value' => array('test', 'www.example.com'),
+					'IBL' => '+test ',
+					'hit' => array('test'),
+				)
+			),
+
+			array( 'test -site:www.example.com', 	
+				array(
+					'SQL' => '((c = ?) and (not site = ?))',
+					'value' => array('test', 'www.example.com'),
+					'IBL' => '+test ',
+					'hit' => array('test'),
+				)
+			),
+
+		);
 	}
 
 

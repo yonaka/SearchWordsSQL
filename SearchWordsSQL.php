@@ -75,10 +75,31 @@ namespace SearchWordsSQL {
 		}
 		return $a;
 	}
-	
+
+	/**
+	 * Flattens an array tree.
+	 *
+	 * A utility function to flatten an array which contains data in a tree structure.
+	 * This can be useful to prepare a parameterized SQL statement when the callback
+	 * function returns an array whereas the parameters must be a flat array to prepare.
+	 * Note that empty array are ignored.
+	 * @api
+	 * @param array $a An array to be flatten.
+	 * @return The flattened array.
+	 */
+	function array_flatten(&$a) {
+		$r = array();
+		foreach ($a as &$e) {
+			if (is_array($e)) foreach (array_flatten($e) as $e2) $r[] = $e2;
+			else $r[] = $e;
+		}
+		return $r;
+	}
+
 	/** @internal */
 	function AddPlusSign($op, $ibl) {
-		if ($op == 'exclude' || $op == 'and') return "$ibl";
+		if (!isset($ibl) || $ibl == "") return "";
+		else if ($op == 'exclude' || $op == 'and') return "$ibl";
 		else if ($op == 'word' || $op == 'or') return "+$ibl";
 		else return "+($ibl)";
 	}
@@ -90,6 +111,8 @@ namespace SearchWordsSQL {
 		public $wordSQL;
 		/** @internal */
 		public $valueCallback, $IBLCallback;
+		/** @internal */
+		private $prefixCallbacks;
 		/** @internal */
 		private $tree;
 		/** @internal */
@@ -103,8 +126,9 @@ namespace SearchWordsSQL {
 		 * @param string $wordSQL A parameterized SQL boolean expression using placeholder(s) for each search word.
 		 * @param callable $valueCallback A user function with a parameter to convert a search word. If omitted, no conversion will be processed. It would be given an original search word as the first parameter and must return a converted value, which if $thisobj were an instance of SQLBuilder, $thisobj->Build()['value'] would contain. The return value can be an array.
 		 * @param callable $IBLCallback A user function with a parameter to convert a search word.  If omitted, \SearchWordsSQL\IBLCallback() is used. It would be given an original search word as the first parameter and must return a converted value, which if $thisobj were an instance of SQLBuilder, $thisobj->Build()['IBL'] would contain. The return value can be an array.
+		 * @param callback[] $prefixCallbacks An array containing prefix functions with keys to specify prefix. A prefix function will be called when a search word contains the prefix at the beginning. The prefix function must return an array containing an SQL string with key 'SQL' and an value with key 'value'.
 		 */
-		public function __construct($wordSQL, $valueCallback = null, $IBLCallback = null) {
+		public function __construct($wordSQL, $valueCallback = null, $IBLCallback = null, $prefixCallbacks = null) {
 			$this->wordSQL = "($wordSQL)";
 			$this->valueCallback = 
 				isset($valueCallback) ?
@@ -114,6 +138,10 @@ namespace SearchWordsSQL {
 				isset($IBLCallback) ?
 				$this->IBLCallback = $IBLCallback :
 				$this->IBLCallback = "SearchWordsSQL\IBLCallback";
+			$this->prefixCallbacks = 
+				isset($prefixCallbacks) ?
+				$this->prefixCallbacks = $prefixCallbacks :
+				$this->prefixCallbacks = array();
 
 
 			$o = $this;
@@ -121,9 +149,18 @@ namespace SearchWordsSQL {
 				'word'	=>	function($node) use ($o) {
 					$lhs = $node[0]['word'];
 					if (preg_match('/^\\*+$/uA', $lhs)) throw new \InvalidArgumentException("Independent stars");
+					$lhspval = $o->CallPrefixFunc($lhs);
 					$lhsval = call_user_func($o->valueCallback, $lhs);
 					$lhsibl = call_user_func($o->IBLCallback, $lhs);
 					$wordtype = $node[0]['wordtype'];
+					if (isset($lhspval)) {
+						return array(
+							'SQL'	=>	$lhspval['SQL'],
+							'value'	=>	array($lhspval['value']),
+							'IBL'	=>	"",
+							'hit'	=>	array(),
+						);
+					}
 					return array(
 						'SQL'	=>	$o->wordSQL,
 						'value'	=>	array( $lhsval ),
@@ -170,7 +207,10 @@ namespace SearchWordsSQL {
 					return array(
 						'SQL'	=>	"( not ${lhs['SQL']} )",
 						'value'	=>	$lhs['value'],
-						'IBL'	=>	$lhsop == 'word' ? "-${lhs['IBL']}" : "-(${lhs['IBL']})",
+						'IBL'	=>	!isset($lhs['IBL']) || $lhs['IBL'] == "" ? "" : (
+							$lhsop == 'word' ? "-${lhs['IBL']}" :
+							"-(${lhs['IBL']})"
+						),
 						'hit'	=>	array(),
 					);
 				},
@@ -194,6 +234,7 @@ namespace SearchWordsSQL {
 		 */
 		public function Build($wordsline) {
 			$t = \SearchWordsSQL\Parser\ParseSearchWords($wordsline);
+			if (count($t) <= 1) throw new \InvalidArgumentException();
 			$this->tree = $t[1];
 			$r = $this->BuildSQL();
 			return $r;
@@ -232,8 +273,19 @@ namespace SearchWordsSQL {
 		/** @internal */
 		public function BuildSQL($tree = null) {
 			if (!isset($tree)) $tree = $this->tree;
-			
+			if (!array_key_exists($tree['op'], $this->opFuncs)) throw new \InvalidArgumentException();
 			return $this->opFuncs[$tree['op']]($tree['node']);
+		}
+		
+		/** @internal */
+		public function CallPrefixFunc($lhs) {
+			$r = null;
+			foreach (array_keys($this->prefixCallbacks) as $p) {
+				if (mb_substr($lhs, 0, mb_strlen($p)) == $p) {
+					$r = $this->prefixCallbacks[$p]($lhs);
+				}
+			}
+			return $r;
 		}
 	}
 }
