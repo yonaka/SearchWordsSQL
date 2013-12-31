@@ -53,8 +53,17 @@ $stmt->execute(array($result['IBL']));
 Run makedoc.sh and see ./doc/index.html. Also there are [online documents](http://yonaka.github.io/SearchWordsSQL/doc/).
 
 ## License
-LGPLv3. See COPYING.LESSER.
+LGPLv2 or later. See COPYING.LESSER.
 
 ## Caveats
 * This library does not comform to naming convention of standard PHP codes.
 * IBL expression the library produces might be too complex for MySQL to interpret.
+
+## Changelog
+### v0.2.1
+* Changed the license from LGPLv3 to LGPLv2.1 or later.
+### v0.2
+* Added support for prefix functions.
+### v0.1
+* Initial Release.
+
